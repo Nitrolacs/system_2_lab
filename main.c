@@ -39,12 +39,17 @@ void* train(void* arg) {
     printf("\033[1;32mПоезд №%d прибывает на станцию.\033[0m\n",
            trainId);
 
+    // Используем мьютекс для обеспечения взаимного исключения.
     pthread_mutex_lock(&mutex);
     waitingTrains++;
     pthread_mutex_unlock(&mutex);
 
+    // Поезд ждет на семафоре station, который позволяет ему войти на
+    // станцию, если есть свободный путь
     sem_wait(&station);
 
+    // Оказавшись на станции, поезд уменьшает счетчик waiting_trains и
+    // выводит сообщение о том, что он вошел на станцию.
     pthread_mutex_lock(&mutex);
     waitingTrains--;
     printf("\033[1;34mПоезд №%d занимает путь.\033[0m\n", trainId);
@@ -57,6 +62,7 @@ void* train(void* arg) {
     nanosleep(&ts, NULL);
 
     printf("\033[1;31mПоезд №%d покидает станцию.\033[0m\n", trainId);
+    // Опубликовываем в семафоре station, указывая, что этот путь доступен.
     sem_post(&station);
 
     return NULL;
